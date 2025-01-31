@@ -7,6 +7,13 @@ function love.load()
   gridXCount = 10
   gridYCount = 18
   inert = {}
+  pieceType = 1
+  pieceRotation = 1
+  pieceX = 3
+  pieceY = 0
+  timer = 0
+  pieceXCount = 4
+  pieceYCount = 4
 
   for y = 1, gridYCount do
     inert[y] = {}
@@ -14,18 +21,40 @@ function love.load()
       inert[y][x] = ' '
     end
   end
-  --
-  -- temps
-  inert[18][1] = 'i'
-  inert[17][2] = 'j'
-  inert[16][3] = 'l'
-  inert[15][4] = 'o'
-  inert[14][5] = 's'
-  inert[13][6] = 't'
-  inert[12][7] = 'z'
 
-  pieceType = 1
-  pieceRotation = 1
+  function canPieceMove(testX, testY, testRotation)
+    for y = 1, pieceYCount do
+      for x = 1, pieceXCount do 
+        local testBlockX = testX + x
+        local testBlockY = testY + y
+        if pieceStructures[pieceType][testRotation][y][x] ~= ' ' and (
+          (testBlockX) < 1
+          or (testBlockX) > gridXCount
+          or (testBlockY) > gridYCount
+          or inert[testBlockY][testBlockX] ~= ' '
+        ) then
+          return false
+        end
+      end
+    end
+    return true
+  end
+
+  -- temps
+  inert[8][5] = 'z'
+
+end
+
+function love.update(dt)
+  timer = timer + dt
+  if timer >= 0.5 then
+    timer = 0
+
+    local testY = pieceY + 1
+    if canPieceMove(pieceX, testY, pieceRotation) then
+      pieceY = testY
+    end
+  end
 end
 
 function love.draw()
@@ -36,27 +65,48 @@ function love.draw()
     end
   end
 
-  for y = 1, 4 do
-    for x = 1, 4 do
+  for y = 1, pieceYCount do
+    for x = 1, pieceXCount do
       local block = pieceStructures[pieceType][pieceRotation][y][x]
       if block ~= ' ' then
-        drawBlock(block, x, y)
+        drawBlock(block, x + pieceX, y + pieceY)
       end
     end
   end
 end
 
 function love.keypressed(key) 
-  if key == 'x' then 
-    pieceRotation = pieceRotation + 1
-    -- check after but couldn't this just be done using the modulo operator ??
-    if pieceRotation > #pieceStructures[pieceType] then 
-      pieceRotation = 1
+  if key == 'x' then
+    local testRotation = pieceRotation + 1
+    if testRotation > #pieceStructures[pieceType] then
+      testRotation = 1
     end
+
+    if canPieceMove(pieceX, pieceY, testRotation) then
+      pieceRotation = testRotation
+    end
+
+
   elseif key == 'z' then
-    pieceRotation = pieceRotation - 1
-    if pieceRotation < 1 then
-      pieceRotation = #pieceStructures[pieceType]
+    local testRotation = pieceRotation - 1
+    if testRotation < 1 then
+      testRotation = #pieceStructures[pieceType]
+    end
+
+    if canPieceMove(pieceX, pieceY, testRotation) then
+      pieceRotation = testRotation
+    end
+
+  elseif key == 'left' then
+    local testX = pieceX - 1
+    if canPieceMove(testX, pieceY, pieceRotation) then
+      pieceX = testX
+    end
+
+  elseif key == 'right' then
+    local testX = pieceX + 1
+    if canPieceMove(testX, pieceY, pieceRotation) then
+      pieceX = testX
     end
   end
 end
