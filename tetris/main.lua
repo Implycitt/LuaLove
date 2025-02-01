@@ -40,25 +40,56 @@ function love.load()
     return true
   end
 
-  -- temps
-  inert[8][5] = 'z'
+  function newPiece()
+    pieceX = 3
+    pieceY = 0
+    pieceType = table.remove(sequence)
+    pieceRotation = 1
 
+    if #sequence == 0 then
+      newSequence()
+    end
+  end
+
+  function newSequence()
+    sequence = {}
+    for pieceTypeIndex = 1, #pieceStructures do
+      local position = love.math.random(#sequence + 1)
+      table.insert(
+        sequence,
+        position,
+        pieceTypeIndex
+      )
+    end
+  end
+
+  newPiece()
 end
 
 function love.update(dt)
   timer = timer + dt
-  if timer >= 0.5 then
+  timerLimit = 0.5
+  if timer >= timerLimit then
     timer = 0
 
     local testY = pieceY + 1
     if canPieceMove(pieceX, testY, pieceRotation) then
       pieceY = testY
+    else
+      for y = 1, pieceYCount do
+        for x = 1, pieceXCount do 
+          local block = pieceStructures[pieceType][pieceRotation][y][x]
+          if block ~= ' ' then
+            inert[pieceY + y][pieceX + x] = block
+          end
+        end
+      end
+      newPiece()
     end
   end
 end
 
 function love.draw()
-
   for y = 1, gridYCount do
     for x = 1, gridXCount do
       drawBlock(inert[y][x], x, y)
@@ -81,18 +112,15 @@ function love.keypressed(key)
     if testRotation > #pieceStructures[pieceType] then
       testRotation = 1
     end
-
     if canPieceMove(pieceX, pieceY, testRotation) then
       pieceRotation = testRotation
     end
-
 
   elseif key == 'z' then
     local testRotation = pieceRotation - 1
     if testRotation < 1 then
       testRotation = #pieceStructures[pieceType]
     end
-
     if canPieceMove(pieceX, pieceY, testRotation) then
       pieceRotation = testRotation
     end
@@ -108,6 +136,18 @@ function love.keypressed(key)
     if canPieceMove(testX, pieceY, pieceRotation) then
       pieceX = testX
     end
+
+  elseif key == 'c' then 
+    while canPieceMove(pieceX, pieceY + 1, pieceRotation) do
+      pieceY = pieceY + 1
+      timer = timerLimit
+    end
+
+  -- temp
+  elseif key == 's' then
+    newSequence(
+      print(table.concat(sequence, ', '))
+    )
   end
 end
 
