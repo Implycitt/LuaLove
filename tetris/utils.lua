@@ -9,6 +9,7 @@ colors = {
   s = {.83, .54, .93},
   t = {.97, .58, .77},
   z = {.66, .83, .46},
+  preview = {.75, .75, .75}
 }
 
 function drawBlock(block, x, y)

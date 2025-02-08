@@ -2,7 +2,7 @@ require 'pieces'
 require 'utils'
 
 function love.load()
-  love.graphics.setBackgroundColor(255, 255, 255)
+  love.graphics.setBackgroundColor(.25, .25, .25)
 
   gridXCount = 10
   gridYCount = 18
@@ -14,13 +14,7 @@ function love.load()
   timer = 0
   pieceXCount = 4
   pieceYCount = 4
-
-  for y = 1, gridYCount do
-    inert[y] = {}
-    for x = 1, gridXCount do
-      inert[y][x] = ' '
-    end
-  end
+  timerLimit = 0.5
 
   function canPieceMove(testX, testY, testRotation)
     for y = 1, pieceYCount do
@@ -63,12 +57,25 @@ function love.load()
     end
   end
 
-  newPiece()
+  function reset() 
+    inert = {}
+    for y = 1, gridYCount do
+      inert[y] = {}
+      for x = 1, gridXCount do
+        inert[y][x] = ' '
+      end
+    end
+    newSequence()
+    newPiece()
+    timer = 0
+  end
+
+  reset()
+
 end
 
 function love.update(dt)
   timer = timer + dt
-  timerLimit = 0.5
   if timer >= timerLimit then
     timer = 0
 
@@ -77,32 +84,62 @@ function love.update(dt)
       pieceY = testY
     else
       for y = 1, pieceYCount do
-        for x = 1, pieceXCount do 
-          local block = pieceStructures[pieceType][pieceRotation][y][x]
+        for x = 1, pieceXCount do
+          local block =
+            pieceStructures[pieceType][pieceRotation][y][x]
           if block ~= ' ' then
             inert[pieceY + y][pieceX + x] = block
           end
         end
       end
+
+      for y = 1, gridYCount do
+        local complete = true
+        for x = 1, gridXCount do
+          if inert[y][x] == ' ' then
+            complete = false
+            break
+          end
+        end
+
+        if complete then
+          for removeY = y, 2, -1 do
+            for removeX = 1, gridXCount do
+              inert[removeY][removeX] = inert[removeY - 1][removeX]
+            end
+          end
+          for removeX = 1, gridXCount do
+            inert[1][removeX] = ' '
+          end
+        end
+      end
+
       newPiece()
+
+      if not canPieceMove(pieceX, pieceY, pieceRotation) then
+        reset()
+      end
     end
   end
 end
 
 function love.draw()
+  local offsetX = 10
+  local offsetY = 5 
+
   for y = 1, gridYCount do
     for x = 1, gridXCount do
-      drawBlock(inert[y][x], x, y)
+      drawBlock(inert[y][x], x + offsetX, y + offsetY)
     end
   end
 
   for y = 1, pieceYCount do
     for x = 1, pieceXCount do
-      local block = pieceStructures[pieceType][pieceRotation][y][x]
-      if block ~= ' ' then
-        drawBlock(block, x + pieceX, y + pieceY)
+        local block = pieceStructures[pieceType][pieceRotation][y][x]
+        if block ~= ' ' then
+            drawBlock(block, x + pieceX + offsetX, y + pieceY + offsetY)
+          end
       end
-    end
   end
 end
 
@@ -142,12 +179,6 @@ function love.keypressed(key)
       pieceY = pieceY + 1
       timer = timerLimit
     end
-
-  -- temp
-  elseif key == 's' then
-    newSequence(
-      print(table.concat(sequence, ', '))
-    )
   end
 end
 
